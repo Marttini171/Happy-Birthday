@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birthday Celebration</title>
+    <title>2026 Celebration</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -42,6 +42,32 @@
             border-bottom-right-radius: 4px;
         }
 
+        #celebration-video {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: contain; 
+            z-index: 9999; display: none; background: black;
+            pointer-events: none;
+        }
+        
+        #close-area {
+            position: fixed; top: 0; right: 0; width: 100px; height: 100px;
+            z-index: 10003; display: none; cursor: pointer;
+        }
+        
+        #close-icon {
+            position: absolute; top: 20px; right: 20px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.5rem; font-weight: bold;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        #close-area:hover #close-icon {
+            color: rgba(255, 255, 255, 1);
+            transform: scale(1.2);
+            text-shadow: 0 0 10px #FFD700;
+        }
+
         #brightness-panel {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
             width: 300px; background: rgba(10, 10, 20, 0.9);
@@ -52,47 +78,38 @@
         }
         #brightness-panel label { font-size: 0.9rem; font-weight: bold; color: #FFD700; display: block; margin-bottom: 10px; }
         input[type=range] { width: 100%; cursor: pointer; accent-color: #FFD700; }
-        
-        #audio-indicator {
+
+        #credit-text {
             position: fixed;
-            top: 20px;
+            bottom: 15px;
             right: 20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(10, 10, 20, 0.7);
-            border: 1px solid #FFD700;
-            color: #FFD700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            z-index: 10007;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-        
-        #audio-indicator:hover {
-            background: rgba(255, 215, 0, 0.2);
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-        
-        #audio-indicator.paused {
-            opacity: 0.6;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10006;
+            pointer-events: none;
+            user-select: none;
+            font-family: 'Segoe UI', sans-serif;
+            text-shadow: 0 0 2px rgba(0,0,0,0.8);
         }
     </style>
 </head>
 <body>
+
+    <video id="celebration-video" playsinline muted loop>
+        <source src="video.mp4" type="video/mp4">
+    </video>
+
+    <div id="close-area" title="Đóng Video">
+        <div id="close-icon">✖</div>
+    </div>
 
     <div id="brightness-panel">
         <label>ĐỘ SÁNG: <span id="b-value">100%</span></label>
         <input type="range" id="brightness-slider" min="10" max="200" value="100">
     </div>
 
-    <!-- Audio indicator -->
-    <div id="audio-indicator" title="Nhấn để tạm dừng/tiếp tục">♪</div>
+    <div id="credit-text">tiktok: binnanee</div>
 
     <div id="camera-wrapper">
         <canvas id="camera-preview"></canvas>
@@ -101,29 +118,6 @@
 
     <video id="input-video" style="display:none"></video>
     <div id="canvas-container"></div>
-
-    <!-- Audio element với link YouTube CỦA BẠN -->
-    <!-- ĐÃ ĐƯỢC THAY THẾ VỚI LINK: https://youtu.be/Og25tNifNSs?si=fb4R4Vj-kJ5G-Jtu -->
-    <audio id="birthday-audio" loop>
-        <!-- Sử dụng YouTube embed với autoplay và loop -->
-        <source src="https://www.youtube.com/embed/Og25tNifNSs?autoplay=1&loop=1&playlist=Og25tNifNSs&controls=0&modestbranding=1" type="audio/mpeg">
-        
-        <!-- Fallback: Sử dụng iframe ẩn để phát YouTube -->
-        <!-- <iframe id="youtube-audio" style="display:none" src="https://www.youtube.com/embed/Og25tNifNSs?autoplay=1&loop=1&playlist=Og25tNifNSs&enablejsapi=1"></iframe> -->
-        
-        Trình duyệt của bạn không hỗ trợ thẻ audio.
-    </audio>
-
-    <!-- Thêm iframe ẩn để phát YouTube (phương pháp dự phòng) -->
-    <iframe id="youtube-player" 
-            style="display: none;"
-            width="0" 
-            height="0" 
-            src="https://www.youtube.com/embed/Og25tNifNSs?enablejsapi=1&autoplay=1&loop=1&playlist=Og25tNifNSs"
-            frameborder="0"
-            allow="autoplay; encrypted-media"
-            allowfullscreen>
-    </iframe>
 
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
@@ -138,93 +132,15 @@
             particleSize: 2.8,
             imageGap: 1.8,
             depthMultiplier: 20.0,
-            morphSpeed: 0.08,
+            morphSpeed: 0.08, 
             HOLD_DURATION: 1000,
-            FW_SCALE: 9.0,
-            FW_SPEED_MULT: 0.9375
+            FW_SCALE: 9.0, 
+            FW_SPEED_MULT: 0.9375 
         };
 
         const FIREWORK_PALETTE = [0xFFD700, 0xC0C0C0, 0xB8860B, 0xCD5C5C, 0x8B0000, 0x4682B4, 0x191970, 0xF0E68C];
         function getRandomFireworkColor() { return FIREWORK_PALETTE[Math.floor(Math.random() * FIREWORK_PALETTE.length)]; }
 
-        // Audio setup
-        const birthdayAudio = document.getElementById('birthday-audio');
-        const audioIndicator = document.getElementById('audio-indicator');
-        const youtubePlayer = document.getElementById('youtube-player');
-        
-        // Biến để kiểm soát trạng thái nhạc
-        let isMusicPlaying = false;
-        
-        // Tự động phát nhạc khi trang load (sử dụng YouTube iframe)
-        window.addEventListener('load', function() {
-            // Thử phát audio element trước
-            birthdayAudio.volume = 0.5;
-            
-            const playPromise = birthdayAudio.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    // Thành công với audio element
-                    audioIndicator.innerHTML = "♫";
-                    audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
-                    audioIndicator.classList.remove('paused');
-                    isMusicPlaying = true;
-                }).catch(error => {
-                    // Không phát được bằng audio element, sử dụng YouTube iframe
-                    console.log("Sử dụng YouTube iframe để phát nhạc");
-                    audioIndicator.innerHTML = "▶";
-                    audioIndicator.title = "Nhấn để phát nhạc từ YouTube";
-                    audioIndicator.classList.add('paused');
-                });
-            }
-        });
-        
-        // Toggle nhạc khi click vào indicator
-        audioIndicator.addEventListener('click', function() {
-            if (isMusicPlaying) {
-                // Tạm dừng
-                birthdayAudio.pause();
-                // Cũng dừng YouTube iframe nếu đang chạy
-                try {
-                    youtubePlayer.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                } catch(e) {}
-                
-                audioIndicator.innerHTML = "♪";
-                audioIndicator.classList.add('paused');
-                audioIndicator.title = "Nhạc đã tạm dừng - Nhấn để phát";
-                isMusicPlaying = false;
-            } else {
-                // Phát nhạc
-                birthdayAudio.play().then(() => {
-                    audioIndicator.innerHTML = "♫";
-                    audioIndicator.classList.remove('paused');
-                    audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
-                    isMusicPlaying = true;
-                }).catch(error => {
-                    // Nếu audio element không phát được, thử dùng YouTube iframe
-                    console.log("Kích hoạt YouTube player");
-                    try {
-                        youtubePlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-                        audioIndicator.innerHTML = "♫";
-                        audioIndicator.classList.remove('paused');
-                        audioIndicator.title = "Nhạc YouTube đang phát - Nhấn để tạm dừng";
-                        isMusicPlaying = true;
-                    } catch(e) {
-                        console.error("Không thể phát nhạc:", error);
-                    }
-                });
-            }
-        });
-        
-        // Bắt đầu nhạc khi có tương tác đầu tiên
-        document.addEventListener('click', function startMusicOnInteraction() {
-            if (!isMusicPlaying) {
-                audioIndicator.click();
-            }
-            document.removeEventListener('click', startMusicOnInteraction);
-        }, { once: true });
-
-        // Brightness Controls
         const bPanel = document.getElementById('brightness-panel');
         const bSlider = document.getElementById('brightness-slider');
         const bValue = document.getElementById('b-value');
@@ -232,11 +148,6 @@
         document.addEventListener('keydown', (e) => {
             if (e.key.toLowerCase() === 'p') {
                 bPanel.style.display = (bPanel.style.display === 'block') ? 'none' : 'block';
-            }
-            
-            // Thêm phím M để điều khiển nhạc
-            if (e.key.toLowerCase() === 'm') {
-                audioIndicator.click();
             }
         });
 
@@ -247,25 +158,50 @@
         });
 
         let scene, camera, renderer, controls, particles;
-        let particleAttributes = { positions: null, targets: null, photoPositions: null, colors: null, birthdayTargets: null };
-        const numberCache = {};
+        let particleAttributes = { positions: null, targets: null, photoPositions: null, colors: null, newYearTargets: null };
+        const numberCache = {}; 
         let isInitialized = false;
-        let currentMode = 'PHOTO';
-        let targetContent = 'PHOTO';
+        let currentMode = 'PHOTO'; 
+        let targetContent = 'PHOTO'; 
+        let holdStartTime = 0;
         
         const fireworks = [];
         let starSystem;
 
+        const celebVideo = document.getElementById('celebration-video');
+        const closeArea = document.getElementById('close-area');
         const loadingBar = document.getElementById('loading-bar');
         const cameraPreview = document.getElementById('camera-preview');
+        
+        let isVideoPlaying = false;
 
         function loadDefaultImage() {
             const img = new Image();
             img.crossOrigin = "Anonymous";
-            img.src = 'img.png';
+            img.src = 'img.png'; 
             img.onload = () => { createParticlesFromImage(img); cameraUtils.start(); };
             img.onerror = () => { alert("LỖI: Không tìm thấy 'img.png'!"); };
         }
+
+        function triggerVideo() {
+            if (isVideoPlaying) return;
+            isVideoPlaying = true;
+            celebVideo.style.display = 'block';
+            closeArea.style.display = 'block'; 
+            celebVideo.currentTime = 0;
+            celebVideo.play().catch(e => console.error(e));
+        }
+
+        function stopVideo() {
+            isVideoPlaying = false;
+            celebVideo.pause();
+            celebVideo.style.display = 'none';
+            closeArea.style.display = 'none';
+            holdStartTime = 0; 
+            loadingBar.style.width = '0%';
+        }
+
+        closeArea.addEventListener('click', stopVideo);
 
         function createSolidCircleTexture() {
             const c=document.createElement('canvas'); c.width=64; c.height=64; const ctx=c.getContext('2d');
@@ -276,7 +212,7 @@
         function getGlowParticleTexture() {
             const c = document.createElement('canvas'); c.width=32; c.height=32; const ctx=c.getContext('2d');
             const g = ctx.createRadialGradient(16,16,0,16,16,16);
-            g.addColorStop(0,'rgba(255,255,255,1)');
+            g.addColorStop(0,'rgba(255,255,255,1)'); 
             g.addColorStop(0.5,'rgba(255,255,255,0.2)');
             g.addColorStop(1,'rgba(0,0,0,0)');
             ctx.fillStyle=g; ctx.fillRect(0,0,32,32);
@@ -436,7 +372,7 @@
             for(let i=0;i<count;i++){
                 if(imgData[i*4+3]<20)continue;
                 const c=i%w; const r_idx=Math.floor(i/w);
-                const x=(c-w/2)*CONFIG.imageGap; const y=-(r_idx-h/2)*CONFIG.imageGap;
+                const x=(c-w/2)*CONFIG.imageGap; const y=-(r_idx-h/2)*CONFIG.imageGap; 
                 const z=(1.0-(imgData[i*4]/255))*CONFIG.depthMultiplier;
                 pos[vIdx*3]=x; pos[vIdx*3+1]=y; pos[vIdx*3+2]=z; tar[vIdx*3]=x; tar[vIdx*3+1]=y; tar[vIdx*3+2]=z;
                 col[vIdx*3]=imgData[i*4]/255; col[vIdx*3+1]=imgData[i*4+1]/255; col[vIdx*3+2]=imgData[i*4+2]/255; vIdx++;
@@ -452,7 +388,7 @@
             scene.add(particles); controls.reset(); camera.position.set(0,0,Math.max(w,h)*CONFIG.imageGap);
             isInitialized=true;
             generateAllNumbers(vIdx);
-            particleAttributes.birthdayTargets = createBirthdayPoints(vIdx);
+            particleAttributes.newYearTargets = createNewYearPoints(vIdx);
         }
 
         function generateAllNumbers(total) {
@@ -462,16 +398,12 @@
                 numberCache[i]=scanCanvasToPoints(c,total,s,2.2,s,true);
             }
         }
-        
-        function createBirthdayPoints(total){
-            const w=1000; const h=450; const c=document.createElement('canvas'); c.width=w; c.height=h;
+        function createNewYearPoints(total){
+            const w=850; const h=400; const c=document.createElement('canvas'); c.width=w; c.height=h;
             const ctx=c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-            ctx.font='bold 80px Arial'; ctx.fillText("21/01",w/2,h/2-90);
-            ctx.font='bold 60px Arial'; ctx.fillText("HAPPY BIRTHDAY",w/2,h/2-10);
-            ctx.font='bold 50px Arial'; ctx.fillText("TRƯƠNG MINH ĐẠT",w/2,h/2+70);
-            return scanCanvasToPoints(c,total,w,1.2,h,true);
+            ctx.font='bold 100px Arial'; ctx.fillText("2026",w/2,h/2-60); ctx.font='bold 55px Arial'; ctx.fillText("HAPPY NEW YEAR",w/2,h/2+60);
+            return scanCanvasToPoints(c,total,w,1.5,h,true);
         }
-        
         function scanCanvasToPoints(canvas,total,w,scale,h,thick){
             const ctx=canvas.getContext('2d'); const d=ctx.getImageData(0,0,w,h).data; const p=[];
             for(let i=0;i<w*h;i++){if(d[i*4]>128)p.push({x:(i%w)-w/2,y:-(Math.floor(i/w)-h/2)});}
@@ -487,7 +419,7 @@
         const previewCtx = cameraPreview.getContext('2d');
 
         function onResults(results) {
-            previewCtx.save();
+            previewCtx.save(); 
             previewCtx.clearRect(0,0,cameraPreview.width,cameraPreview.height);
             previewCtx.drawImage(results.image,0,0,cameraPreview.width,cameraPreview.height);
             let handsData = [];
@@ -507,36 +439,51 @@
 
         function updateSystemState(handsData) {
             if (!isInitialized) return;
+            
+            let videoTriggerFists = handsData.filter(h => h.fingers <= 1).length; 
+            
+            if (isVideoPlaying) {
+                if (handsData.length === 0) return;
+                if (videoTriggerFists >= 2) return;
+                stopVideo();
+            }
 
-            if (handsData.length > 0) {
-                const p = handsData[0];
-                if (p.fingers >= 1 && p.fingers <= 5) {
-                    if (currentMode !== 'NUMBER' || targetContent !== p.fingers) {
-                        currentMode = 'NUMBER';
-                        targetContent = p.fingers;
-                        particleAttributes.targets = numberCache[p.fingers];
-                    }
-                }
-                else if (p.fingers === 0) {
-                    if (currentMode !== 'BIRTHDAY') {
-                        currentMode = 'BIRTHDAY';
-                        particleAttributes.targets = particleAttributes.birthdayTargets;
-                    }
-                }
-                else {
-                    if (currentMode !== 'PHOTO') {
-                        currentMode = 'PHOTO';
-                        particleAttributes.targets = particleAttributes.photoPositions;
-                    }
-                }
+            if (handsData.length >= 2 && videoTriggerFists >= 2) {
+                if (holdStartTime === 0) holdStartTime = Date.now();
+                const elapsed = Date.now() - holdStartTime;
+                loadingBar.style.width = Math.min((elapsed / CONFIG.HOLD_DURATION) * 100, 100) + "%";
+                if (elapsed >= CONFIG.HOLD_DURATION) { triggerVideo(); holdStartTime = 0; }
             } else {
-                if (currentMode !== 'PHOTO') {
-                    currentMode = 'PHOTO';
-                    particleAttributes.targets = particleAttributes.photoPositions;
+                if (holdStartTime !== 0) { holdStartTime = 0; loadingBar.style.width = "0%"; }
+                
+                if (handsData.length > 0) {
+                    const p = handsData[0];
+                    if (p.fingers >= 1 && p.fingers <= 5) { 
+                        if (currentMode !== 'NUMBER' || targetContent !== p.fingers) { 
+                            currentMode = 'NUMBER'; 
+                            targetContent = p.fingers; 
+                            particleAttributes.targets = numberCache[p.fingers]; 
+                        } 
+                    } 
+                    else if (p.fingers === 0) { 
+                        if (currentMode !== 'NEWYEAR') { 
+                            currentMode = 'NEWYEAR'; 
+                            particleAttributes.targets = particleAttributes.newYearTargets; 
+                        } 
+                    }
+                    else { 
+                        if (currentMode !== 'PHOTO') { 
+                            currentMode = 'PHOTO'; 
+                            particleAttributes.targets = particleAttributes.photoPositions; 
+                        } 
+                    }
+                } else {
+                    if (currentMode !== 'PHOTO') { 
+                        currentMode = 'PHOTO'; 
+                        particleAttributes.targets = particleAttributes.photoPositions; 
+                    }
                 }
             }
-            
-            loadingBar.style.width = "0%";
         }
 
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
@@ -548,7 +495,7 @@
 
             if(starSystem) starSystem.rotation.y += 0.0002;
             
-            if (isInitialized && Math.random() < 0.03) {
+            if (isInitialized && Math.random() < 0.03) { 
                 if (Math.random() < 0.5) fireworks.push(new LinearFirework());
                 else fireworks.push(new RealisticFirework());
             }
@@ -558,13 +505,17 @@
                 if (fireworks[i].isDead) fireworks.splice(i, 1);
             }
 
-            if(particles && particleAttributes.targets){
-                const pos=particles.geometry.attributes.position.array; const tar=particleAttributes.targets;
-                for(let i=0;i<pos.length;i++){pos[i]+=(tar[i]-pos[i])*CONFIG.morphSpeed;}
-                particles.geometry.attributes.position.needsUpdate=true;
+            if(!isVideoPlaying) {
+                if(particles && particleAttributes.targets){
+                    const pos=particles.geometry.attributes.position.array; const tar=particleAttributes.targets;
+                    for(let i=0;i<pos.length;i++){pos[i]+=(tar[i]-pos[i])*CONFIG.morphSpeed;}
+                    particles.geometry.attributes.position.needsUpdate=true;
+                }
+                controls.update();
+                renderer.render(scene, camera);
+            } else {
+                renderer.render(scene, camera);
             }
-            controls.update();
-            renderer.render(scene, camera);
         }
 
         initThree();
