@@ -52,10 +52,7 @@
         }
         #brightness-panel label { font-size: 0.9rem; font-weight: bold; color: #FFD700; display: block; margin-bottom: 10px; }
         input[type=range] { width: 100%; cursor: pointer; accent-color: #FFD700; }
-
-        /* Đã xóa #credit-text */
         
-        /* Thêm audio control đơn giản */
         #audio-indicator {
             position: fixed;
             top: 20px;
@@ -94,10 +91,8 @@
         <input type="range" id="brightness-slider" min="10" max="200" value="100">
     </div>
 
-    <!-- Audio indicator đơn giản -->
-    <div id="audio-indicator" title="Nhấn để tạm dừng/nhạc Happy Birthday">♪</div>
-
-    <!-- Đã xóa <div id="credit-text">tiktok: binnanee</div> -->
+    <!-- Audio indicator -->
+    <div id="audio-indicator" title="Nhấn để tạm dừng/tiếp tục">♪</div>
 
     <div id="camera-wrapper">
         <canvas id="camera-preview"></canvas>
@@ -107,12 +102,28 @@
     <video id="input-video" style="display:none"></video>
     <div id="canvas-container"></div>
 
-    <!-- Thêm audio element -->
+    <!-- Audio element với link YouTube CỦA BẠN -->
+    <!-- ĐÃ ĐƯỢC THAY THẾ VỚI LINK: https://youtu.be/Og25tNifNSs?si=fb4R4Vj-kJ5G-Jtu -->
     <audio id="birthday-audio" loop>
-        <source src="https://youtu.be/Og25tNifNSs?si=0fPl2ZXxu0QHqPiK" type="audio/mp3">
-        <source src="https://youtu.be/Og25tNifNSs?si=0fPl2ZXxu0QHqPiK" type="audio/wav">
+        <!-- Sử dụng YouTube embed với autoplay và loop -->
+        <source src="https://www.youtube.com/embed/Og25tNifNSs?autoplay=1&loop=1&playlist=Og25tNifNSs&controls=0&modestbranding=1" type="audio/mpeg">
+        
+        <!-- Fallback: Sử dụng iframe ẩn để phát YouTube -->
+        <!-- <iframe id="youtube-audio" style="display:none" src="https://www.youtube.com/embed/Og25tNifNSs?autoplay=1&loop=1&playlist=Og25tNifNSs&enablejsapi=1"></iframe> -->
+        
         Trình duyệt của bạn không hỗ trợ thẻ audio.
     </audio>
+
+    <!-- Thêm iframe ẩn để phát YouTube (phương pháp dự phòng) -->
+    <iframe id="youtube-player" 
+            style="display: none;"
+            width="0" 
+            height="0" 
+            src="https://www.youtube.com/embed/Og25tNifNSs?enablejsapi=1&autoplay=1&loop=1&playlist=Og25tNifNSs"
+            frameborder="0"
+            allow="autoplay; encrypted-media"
+            allowfullscreen>
+    </iframe>
 
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
@@ -139,57 +150,76 @@
         // Audio setup
         const birthdayAudio = document.getElementById('birthday-audio');
         const audioIndicator = document.getElementById('audio-indicator');
+        const youtubePlayer = document.getElementById('youtube-player');
         
-        // Tự động phát nhạc khi trang load
+        // Biến để kiểm soát trạng thái nhạc
+        let isMusicPlaying = false;
+        
+        // Tự động phát nhạc khi trang load (sử dụng YouTube iframe)
         window.addEventListener('load', function() {
-            // Đặt âm lượng vừa phải
+            // Thử phát audio element trước
             birthdayAudio.volume = 0.5;
             
-            // Thử phát nhạc tự động
             const playPromise = birthdayAudio.play();
             
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    // Nhạc đang phát
+                    // Thành công với audio element
                     audioIndicator.innerHTML = "♫";
-                    audioIndicator.title = "Nhạc Happy Birthday đang phát - Nhấn để tạm dừng";
+                    audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
                     audioIndicator.classList.remove('paused');
+                    isMusicPlaying = true;
                 }).catch(error => {
-                    // Trình duyệt chặn autoplay
-                    audioIndicator.innerHTML = "♪";
-                    audioIndicator.title = "Nhấn để phát nhạc Happy Birthday";
+                    // Không phát được bằng audio element, sử dụng YouTube iframe
+                    console.log("Sử dụng YouTube iframe để phát nhạc");
+                    audioIndicator.innerHTML = "▶";
+                    audioIndicator.title = "Nhấn để phát nhạc từ YouTube";
                     audioIndicator.classList.add('paused');
-                    console.log("Autoplay bị chặn, đợi tương tác người dùng");
                 });
             }
         });
         
         // Toggle nhạc khi click vào indicator
         audioIndicator.addEventListener('click', function() {
-            if (birthdayAudio.paused) {
+            if (isMusicPlaying) {
+                // Tạm dừng
+                birthdayAudio.pause();
+                // Cũng dừng YouTube iframe nếu đang chạy
+                try {
+                    youtubePlayer.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                } catch(e) {}
+                
+                audioIndicator.innerHTML = "♪";
+                audioIndicator.classList.add('paused');
+                audioIndicator.title = "Nhạc đã tạm dừng - Nhấn để phát";
+                isMusicPlaying = false;
+            } else {
+                // Phát nhạc
                 birthdayAudio.play().then(() => {
                     audioIndicator.innerHTML = "♫";
                     audioIndicator.classList.remove('paused');
-                    audioIndicator.title = "Nhạc Happy Birthday đang phát - Nhấn để tạm dừng";
+                    audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
+                    isMusicPlaying = true;
                 }).catch(error => {
-                    console.error("Không thể phát nhạc:", error);
+                    // Nếu audio element không phát được, thử dùng YouTube iframe
+                    console.log("Kích hoạt YouTube player");
+                    try {
+                        youtubePlayer.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                        audioIndicator.innerHTML = "♫";
+                        audioIndicator.classList.remove('paused');
+                        audioIndicator.title = "Nhạc YouTube đang phát - Nhấn để tạm dừng";
+                        isMusicPlaying = true;
+                    } catch(e) {
+                        console.error("Không thể phát nhạc:", error);
+                    }
                 });
-            } else {
-                birthdayAudio.pause();
-                audioIndicator.innerHTML = "♪";
-                audioIndicator.classList.add('paused');
-                audioIndicator.title = "Nhạc Happy Birthday đã tạm dừng - Nhấn để phát";
             }
         });
         
-        // Bắt đầu nhạc khi có tương tác đầu tiên (nếu autoplay bị chặn)
+        // Bắt đầu nhạc khi có tương tác đầu tiên
         document.addEventListener('click', function startMusicOnInteraction() {
-            if (birthdayAudio.paused) {
-                birthdayAudio.play().then(() => {
-                    audioIndicator.innerHTML = "♫";
-                    audioIndicator.classList.remove('paused');
-                    audioIndicator.title = "Nhạc Happy Birthday đang phát - Nhấn để tạm dừng";
-                });
+            if (!isMusicPlaying) {
+                audioIndicator.click();
             }
             document.removeEventListener('click', startMusicOnInteraction);
         }, { once: true });
@@ -506,7 +536,6 @@
                 }
             }
             
-            // Reset loading bar (không còn chức năng video)
             loadingBar.style.width = "0%";
         }
 
