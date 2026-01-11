@@ -118,11 +118,13 @@
 
         #volume-slider {
             width: 80px;
-            opacity: 0;
+            opacity: 0.3;
             transition: opacity 0.3s ease;
+            cursor: pointer;
         }
 
-        #audio-controls:hover #volume-slider {
+        #audio-controls:hover #volume-slider,
+        #volume-slider:hover {
             opacity: 1;
         }
 
@@ -140,9 +142,44 @@
             max-width: 200px;
             display: none;
         }
+        
+        #audio-status.showing {
+            display: block;
+        }
+        
+        #click-to-play {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 20, 0.9);
+            border: 2px solid #FFD700;
+            padding: 20px 30px;
+            border-radius: 15px;
+            color: #FFD700;
+            font-size: 1.2rem;
+            z-index: 10008;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
+            display: none;
+        }
+        
+        #click-to-play:hover {
+            background: rgba(255, 215, 0, 0.1);
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.5);
+        }
     </style>
 </head>
 <body>
+
+    <div id="click-to-play">
+        <div style="font-size: 2rem; margin-bottom: 10px;">🎵</div>
+        <div>NHẤN ĐỂ BẮT ĐẦU NHẠC</div>
+        <div style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">(Trình duyệt yêu cầu tương tác để phát nhạc)</div>
+    </div>
 
     <video id="celebration-video" playsinline muted loop>
         <source src="video.mp4" type="video/mp4">
@@ -172,11 +209,10 @@
     <video id="input-video" style="display:none"></video>
     <div id="canvas-container"></div>
 
-    <!-- Audio element -->
+    <!-- Audio element - CHỈ CẦN audio.mp3 -->
     <audio id="birthday-audio" loop>
-        <!-- Audio sẽ được tải từ GitHub -->
+        <!-- Chỉ cần file audio.mp3 trong cùng thư mục -->
         <source src="audio.mp3" type="audio/mpeg">
-        <source src="audio.wav" type="audio/wav">
         Trình duyệt của bạn không hỗ trợ thẻ audio.
     </audio>
 
@@ -207,124 +243,149 @@
         const audioIndicator = document.getElementById('audio-indicator');
         const volumeSlider = document.getElementById('volume-slider');
         const audioStatus = document.getElementById('audio-status');
+        const clickToPlay = document.getElementById('click-to-play');
 
         // Brightness controls
         const bPanel = document.getElementById('brightness-panel');
         const bSlider = document.getElementById('brightness-slider');
         const bValue = document.getElementById('b-value');
 
-        // Function to load audio from GitHub
-        function loadAudioFromGitHub() {
-            const audioFiles = [
-                'audio.mp3',
-                'audio.wav',
-                'music.mp3',
-                'sound.mp3',
-                'happy-birthday.mp3'
-            ];
+        // Biến trạng thái
+        let isAudioLoaded = false;
+        let isAudioPlaying = false;
+
+        // Function to load and play audio
+        function initializeAudio() {
+            console.log("Đang khởi tạo audio...");
             
-            let loaded = false;
-            let attempts = 0;
+            // Đặt volume ban đầu
+            birthdayAudio.volume = volumeSlider.value / 100;
             
-            function tryLoadAudio(filename) {
-                return new Promise((resolve) => {
-                    const testAudio = new Audio();
-                    testAudio.src = filename;
-                    testAudio.preload = 'auto';
-                    
-                    testAudio.addEventListener('canplaythrough', () => {
-                        console.log(`Found audio file: ${filename}`);
-                        birthdayAudio.src = filename;
-                        resolve(true);
-                    });
-                    
-                    testAudio.addEventListener('error', () => {
-                        console.log(`Audio file not found: ${filename}`);
-                        resolve(false);
-                    });
-                    
-                    // Trigger load
-                    testAudio.load();
-                });
-            }
-            
-            async function tryAllAudioFiles() {
-                audioStatus.textContent = "Đang tìm file nhạc...";
-                audioStatus.style.display = 'block';
+            // Kiểm tra xem file audio có tồn tại không
+            birthdayAudio.addEventListener('canplaythrough', function() {
+                console.log("Audio có thể phát được");
+                isAudioLoaded = true;
+                audioStatus.textContent = "Nhạc đã sẵn sàng";
+                audioStatus.classList.add('showing');
                 
-                for (const file of audioFiles) {
-                    if (loaded) break;
-                    
-                    const success = await tryLoadAudio(file);
-                    if (success) {
-                        loaded = true;
-                        birthdayAudio.load();
-                        
-                        birthdayAudio.addEventListener('canplaythrough', () => {
-                            audioStatus.textContent = "Nhạc đã sẵn sàng";
-                            setTimeout(() => {
-                                audioStatus.style.display = 'none';
-                            }, 2000);
-                            
-                            // Try to auto-play
-                            const playPromise = birthdayAudio.play();
-                            if (playPromise !== undefined) {
-                                playPromise.then(() => {
-                                    audioIndicator.innerHTML = "♫";
-                                    audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
-                                    audioIndicator.classList.remove('paused');
-                                }).catch(error => {
-                                    audioIndicator.innerHTML = "▶";
-                                    audioIndicator.title = "Nhấn để phát nhạc";
-                                    audioIndicator.classList.add('paused');
-                                });
-                            }
-                        });
-                        
-                        birthdayAudio.addEventListener('error', () => {
-                            audioStatus.textContent = "Lỗi tải nhạc";
-                        });
-                        
-                        break;
+                // Hiển thị nút "click to play" nếu autoplay bị chặn
+                setTimeout(() => {
+                    if (!isAudioPlaying) {
+                        clickToPlay.style.display = 'block';
                     }
-                    attempts++;
-                }
-                
-                if (!loaded) {
-                    audioStatus.textContent = "Không tìm thấy file nhạc";
-                    console.log("Không tìm thấy file audio. Vui lòng đảm bảo có file audio.mp3 trong repository.");
-                }
-            }
+                }, 1000);
+            });
             
-            tryAllAudioFiles();
-        }
-
-        // Initialize audio
-        document.addEventListener('DOMContentLoaded', loadAudioFromGitHub);
-
-        // Audio controls
-        audioIndicator.addEventListener('click', function() {
-            if (birthdayAudio.paused) {
-                birthdayAudio.play().then(() => {
-                    audioIndicator.innerHTML = "♫";
-                    audioIndicator.classList.remove('paused');
-                    audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
-                }).catch(error => {
-                    console.error("Không thể phát nhạc:", error);
-                });
-            } else {
-                birthdayAudio.pause();
+            birthdayAudio.addEventListener('error', function(e) {
+                console.error("Lỗi tải audio:", e);
+                audioStatus.textContent = "Lỗi: Không tìm thấy file audio.mp3";
+                audioStatus.classList.add('showing');
+                
+                // Hiển thị hướng dẫn
+                setTimeout(() => {
+                    audioStatus.textContent = "Vui lòng đảm bảo có file audio.mp3 trong thư mục";
+                }, 3000);
+            });
+            
+            birthdayAudio.addEventListener('playing', function() {
+                console.log("Audio đang phát");
+                isAudioPlaying = true;
+                clickToPlay.style.display = 'none';
+                audioIndicator.innerHTML = "♫";
+                audioIndicator.classList.remove('paused');
+                audioIndicator.title = "Nhạc đang phát - Nhấn để tạm dừng";
+                audioStatus.classList.remove('showing');
+            });
+            
+            birthdayAudio.addEventListener('pause', function() {
+                console.log("Audio tạm dừng");
+                isAudioPlaying = false;
                 audioIndicator.innerHTML = "♪";
                 audioIndicator.classList.add('paused');
                 audioIndicator.title = "Nhạc đã tạm dừng - Nhấn để phát";
+            });
+            
+            // Bắt đầu tải audio
+            birthdayAudio.load();
+        }
+
+        // Start audio with user interaction
+        function startAudioWithInteraction() {
+            if (!isAudioLoaded) {
+                console.log("Audio chưa sẵn sàng");
+                return;
+            }
+            
+            birthdayAudio.play().then(() => {
+                console.log("Audio bắt đầu phát thành công");
+                isAudioPlaying = true;
+                clickToPlay.style.display = 'none';
+            }).catch(error => {
+                console.log("Không thể phát audio tự động:", error);
+                clickToPlay.style.display = 'block';
+            });
+        }
+
+        // Toggle play/pause
+        function toggleAudio() {
+            if (!isAudioLoaded) {
+                audioStatus.textContent = "Đang tải nhạc...";
+                audioStatus.classList.add('showing');
+                return;
+            }
+            
+            if (isAudioPlaying) {
+                birthdayAudio.pause();
+            } else {
+                birthdayAudio.play().catch(error => {
+                    console.error("Lỗi phát nhạc:", error);
+                    audioStatus.textContent = "Lỗi phát nhạc. Nhấn lại để thử.";
+                    audioStatus.classList.add('showing');
+                });
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM đã tải xong, khởi tạo audio...");
+            initializeAudio();
+        });
+
+        // Click to play overlay
+        clickToPlay.addEventListener('click', function() {
+            startAudioWithInteraction();
+            // Cũng bắt đầu Three.js nếu chưa
+            if (!window.appInitialized) {
+                initThree();
+                window.appInitialized = true;
             }
         });
 
+        // Audio indicator click
+        audioIndicator.addEventListener('click', toggleAudio);
+
         // Volume control
-        volumeSlider.addEventListener('input', (e) => {
+        volumeSlider.addEventListener('input', function(e) {
             const volume = e.target.value / 100;
             birthdayAudio.volume = volume;
+            
+            // Hiển thị volume tạm thời
+            audioStatus.textContent = "Âm lượng: " + e.target.value + "%";
+            audioStatus.classList.add('showing');
+            setTimeout(() => {
+                if (!isAudioPlaying && !birthdayAudio.error) {
+                    audioStatus.classList.remove('showing');
+                }
+            }, 1000);
         });
+
+        // Auto-start on any user interaction (fallback)
+        document.addEventListener('click', function startOnFirstClick() {
+            if (!isAudioPlaying && isAudioLoaded) {
+                startAudioWithInteraction();
+            }
+            document.removeEventListener('click', startOnFirstClick);
+        }, { once: true });
 
         // Brightness controls
         document.addEventListener('keydown', (e) => {
@@ -333,7 +394,24 @@
             }
             // Audio control with M key
             if (e.key.toLowerCase() === 'm') {
-                audioIndicator.click();
+                toggleAudio();
+            }
+            // Volume controls with arrow keys
+            if (e.key === 'ArrowUp') {
+                let newVolume = Math.min(100, parseInt(volumeSlider.value) + 10);
+                volumeSlider.value = newVolume;
+                birthdayAudio.volume = newVolume / 100;
+                audioStatus.textContent = "Âm lượng: " + newVolume + "%";
+                audioStatus.classList.add('showing');
+                setTimeout(() => audioStatus.classList.remove('showing'), 1000);
+            }
+            if (e.key === 'ArrowDown') {
+                let newVolume = Math.max(0, parseInt(volumeSlider.value) - 10);
+                volumeSlider.value = newVolume;
+                birthdayAudio.volume = newVolume / 100;
+                audioStatus.textContent = "Âm lượng: " + newVolume + "%";
+                audioStatus.classList.add('showing');
+                setTimeout(() => audioStatus.classList.remove('showing'), 1000);
             }
         });
 
@@ -365,8 +443,20 @@
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.src = 'img.png'; 
-            img.onload = () => { createParticlesFromImage(img); cameraUtils.start(); };
-            img.onerror = () => { alert("LỖI: Không tìm thấy 'img.png'!"); };
+            img.onload = () => { 
+                createParticlesFromImage(img); 
+                // Bắt đầu camera sau khi audio đã sẵn sàng
+                if (isAudioLoaded) {
+                    cameraUtils.start();
+                } else {
+                    setTimeout(() => cameraUtils.start(), 1000);
+                }
+            };
+            img.onerror = () => { 
+                alert("LỖI: Không tìm thấy 'img.png'!"); 
+                // Vẫn bắt đầu camera nếu có lỗi ảnh
+                cameraUtils.start();
+            };
         }
 
         function triggerVideo() {
@@ -375,7 +465,13 @@
             celebVideo.style.display = 'block';
             closeArea.style.display = 'block'; 
             celebVideo.currentTime = 0;
-            celebVideo.play().catch(e => console.error(e));
+            
+            // Tạm dừng nhạc khi phát video
+            if (isAudioPlaying) {
+                birthdayAudio.pause();
+            }
+            
+            celebVideo.play().catch(e => console.error("Lỗi phát video:", e));
         }
 
         function stopVideo() {
@@ -385,6 +481,11 @@
             closeArea.style.display = 'none';
             holdStartTime = 0; 
             loadingBar.style.width = '0%';
+            
+            // Tiếp tục nhạc khi dừng video
+            if (isAudioLoaded && !isAudioPlaying) {
+                birthdayAudio.play().catch(e => console.error("Không thể tiếp tục nhạc:", e));
+            }
         }
 
         closeArea.addEventListener('click', stopVideo);
@@ -709,8 +810,22 @@
             }
         }
 
-        initThree();
-        const cameraUtils = new Camera(videoElement, { onFrame: async () => { await hands.send({image: videoElement}); }, width: 320, height: 240 });
+        // Initialize Three.js after user interaction
+        window.startApp = function() {
+            if (!window.appInitialized) {
+                initThree();
+                window.appInitialized = true;
+                cameraUtils = new Camera(videoElement, { onFrame: async () => { await hands.send({image: videoElement}); }, width: 320, height: 240 });
+            }
+        };
+
+        // Start app when user clicks to play audio
+        clickToPlay.addEventListener('click', window.startApp);
+        
+        // Auto-start app if audio is already playing
+        if (isAudioPlaying) {
+            window.startApp();
+        }
         
     </script>
 </body>
