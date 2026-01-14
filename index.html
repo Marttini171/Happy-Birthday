@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Birthday Minh Đạt</title>
+    <title>Happy Birthday Ngọc Trang</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -146,7 +146,7 @@
         });
 
         let scene, camera, renderer, controls, particles;
-        let particleAttributes = { positions: null, targets: null, photoPositions: null, colors: null, birthdayTargets: null };
+        let particleAttributes = { positions: null, targets: null, photoPositions: null, colors: null, birthdayTargets: null }; // ĐÃ ĐỔI TÊN
         const numberCache = {}; 
         let isInitialized = false;
         let currentMode = 'PHOTO'; 
@@ -155,7 +155,6 @@
         
         const fireworks = [];
         let starSystem;
-        let birthdayCake = null; // Thêm biến cho bánh kem
 
         const celebVideo = document.getElementById('celebration-video');
         const closeArea = document.getElementById('close-area');
@@ -164,304 +163,12 @@
         
         let isVideoPlaying = false;
 
-        function createBirthdayCake() {
-            // Xóa bánh cũ nếu có
-            if (birthdayCake) {
-                scene.remove(birthdayCake);
-            }
-            
-            birthdayCake = new THREE.Group();
-            
-            // Tầng dưới cùng của bánh (lớn nhất)
-            const bottomLayerGeometry = new THREE.CylinderGeometry(120, 130, 40, 32);
-            const bottomLayerMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xF5DEB3, // Màu vàng nâu cho bánh
-                shininess: 30,
-                specular: 0x222222
-            });
-            const bottomLayer = new THREE.Mesh(bottomLayerGeometry, bottomLayerMaterial);
-            bottomLayer.position.y = 20;
-            birthdayCake.add(bottomLayer);
-            
-            // Kem phủ tầng dưới
-            const bottomFrostingGeometry = new THREE.TorusGeometry(130, 15, 8, 32, Math.PI);
-            const bottomFrostingMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFFD1DC, // Màu hồng kem
-                shininess: 50,
-                specular: 0x333333
-            });
-            const bottomFrosting = new THREE.Mesh(bottomFrostingGeometry, bottomFrostingMaterial);
-            bottomFrosting.position.y = 40;
-            bottomFrosting.rotation.x = Math.PI;
-            birthdayCake.add(bottomFrosting);
-            
-            // Tầng giữa của bánh
-            const middleLayerGeometry = new THREE.CylinderGeometry(90, 100, 35, 32);
-            const middleLayerMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xF5DEB3,
-                shininess: 30,
-                specular: 0x222222
-            });
-            const middleLayer = new THREE.Mesh(middleLayerGeometry, middleLayerMaterial);
-            middleLayer.position.y = 77.5; // 20 + 40/2 + 35/2
-            birthdayCake.add(middleLayer);
-            
-            // Kem phủ tầng giữa
-            const middleFrostingGeometry = new THREE.TorusGeometry(100, 12, 8, 32, Math.PI);
-            const middleFrostingMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFFD1DC,
-                shininess: 50,
-                specular: 0x333333
-            });
-            const middleFrosting = new THREE.Mesh(middleFrostingGeometry, middleFrostingMaterial);
-            middleFrosting.position.y = 95; // 20 + 40 + 35/2
-            middleFrosting.rotation.x = Math.PI;
-            birthdayCake.add(middleFrosting);
-            
-            // Tầng trên cùng của bánh
-            const topLayerGeometry = new THREE.CylinderGeometry(60, 70, 30, 32);
-            const topLayerMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xF5DEB3,
-                shininess: 30,
-                specular: 0x222222
-            });
-            const topLayer = new THREE.Mesh(topLayerGeometry, topLayerMaterial);
-            topLayer.position.y = 122.5; // 20 + 40 + 35 + 30/2
-            birthdayCake.add(topLayer);
-            
-            // Kem phủ tầng trên
-            const topFrostingGeometry = new THREE.TorusGeometry(70, 10, 8, 32, Math.PI);
-            const topFrostingMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFFD1DC,
-                shininess: 50,
-                specular: 0x333333
-            });
-            const topFrosting = new THREE.Mesh(topFrostingGeometry, topFrostingMaterial);
-            topFrosting.position.y = 137.5; // 20 + 40 + 35 + 30/2 + 15
-            topFrosting.rotation.x = Math.PI;
-            birthdayCake.add(topFrosting);
-            
-            // Đế bánh
-            const baseGeometry = new THREE.CylinderGeometry(135, 140, 5, 32);
-            const baseMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x8B4513, // Màu nâu cho đế
-                shininess: 10,
-                specular: 0x111111
-            });
-            const base = new THREE.Mesh(baseGeometry, baseMaterial);
-            base.position.y = 2.5;
-            birthdayCake.add(base);
-            
-            // Nến sinh nhật
-            const candleColors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF];
-            
-            // Tạo 6 cây nến xung quanh
-            const candlePositions = [];
-            const radius = 65;
-            for (let i = 0; i < 6; i++) {
-                const angle = (i / 6) * Math.PI * 2;
-                candlePositions.push({
-                    x: Math.cos(angle) * radius,
-                    z: Math.sin(angle) * radius
-                });
-            }
-            
-            candlePositions.forEach((pos, index) => {
-                // Thân nến
-                const candleGeometry = new THREE.CylinderGeometry(3, 3, 25, 8);
-                const candleMaterial = new THREE.MeshPhongMaterial({ 
-                    color: candleColors[index % candleColors.length],
-                    shininess: 60,
-                    specular: 0x444444
-                });
-                const candle = new THREE.Mesh(candleGeometry, candleMaterial);
-                candle.position.set(pos.x, 152.5, pos.z); // 20 + 40 + 35 + 30 + 25/2
-                birthdayCake.add(candle);
-                
-                // Ngọn lửa
-                const flameGeometry = new THREE.ConeGeometry(2, 8, 8);
-                const flameMaterial = new THREE.MeshPhongMaterial({ 
-                    color: 0xFFA500, // Màu cam
-                    emissive: 0xFF4500,
-                    shininess: 100,
-                    specular: 0x666666,
-                    transparent: true,
-                    opacity: 0.9
-                });
-                const flame = new THREE.Mesh(flameGeometry, flameMaterial);
-                flame.position.set(pos.x, 165, pos.z); // 152.5 + 25/2 + 8/2
-                birthdayCake.add(flame);
-            });
-            
-            // Thêm nến chính giữa
-            const mainCandleGeometry = new THREE.CylinderGeometry(4, 4, 30, 8);
-            const mainCandleMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFFD700, // Màu vàng gold
-                shininess: 70,
-                specular: 0x555555
-            });
-            const mainCandle = new THREE.Mesh(mainCandleGeometry, mainCandleMaterial);
-            mainCandle.position.set(0, 155, 0); // 20 + 40 + 35 + 30 + 30/2
-            birthdayCake.add(mainCandle);
-            
-            // Ngọn lửa chính
-            const mainFlameGeometry = new THREE.ConeGeometry(3, 12, 8);
-            const mainFlameMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFF4500, // Màu đỏ cam
-                emissive: 0xFF0000,
-                shininess: 100,
-                specular: 0x888888,
-                transparent: true,
-                opacity: 0.95
-            });
-            const mainFlame = new THREE.Mesh(mainFlameGeometry, mainFlameMaterial);
-            mainFlame.position.set(0, 171, 0); // 155 + 30/2 + 12/2
-            birthdayCake.add(mainFlame);
-            
-            // Trang trí viền bánh
-            const decorationGeometry = new THREE.SphereGeometry(5, 8, 8);
-            const decorationMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xFF69B4, // Màu hồng đậm
-                shininess: 40,
-                specular: 0x333333
-            });
-            
-            // Thêm trang trí xung quanh các tầng
-            for (let i = 0; i < 24; i++) {
-                const angle = (i / 24) * Math.PI * 2;
-                
-                // Trang trí tầng dưới
-                const decoration1 = new THREE.Mesh(decorationGeometry, decorationMaterial);
-                decoration1.position.set(
-                    Math.cos(angle) * 130,
-                    40,
-                    Math.sin(angle) * 130
-                );
-                birthdayCake.add(decoration1);
-                
-                // Trang trí tầng giữa
-                const decoration2 = new THREE.Mesh(decorationGeometry, decorationMaterial);
-                decoration2.position.set(
-                    Math.cos(angle) * 100,
-                    95,
-                    Math.sin(angle) * 100
-                );
-                birthdayCake.add(decoration2);
-                
-                // Trang trí tầng trên
-                const decoration3 = new THREE.Mesh(decorationGeometry, decorationMaterial);
-                decoration3.position.set(
-                    Math.cos(angle) * 70,
-                    137.5,
-                    Math.sin(angle) * 70
-                );
-                birthdayCake.add(decoration3);
-            }
-            
-            birthdayCake.position.y = -100; // Đặt bánh thấp hơn một chút
-            scene.add(birthdayCake);
-            
-            // Tạo các hạt từ mô hình bánh kem
-            return createParticlesFromCake(birthdayCake);
-        }
-
-        function createParticlesFromCake(cakeModel) {
-            const count = CONFIG.sampleResolution * CONFIG.sampleResolution;
-            const pos = new Float32Array(count * 3);
-            const col = new Float32Array(count * 3);
-            const tar = new Float32Array(count * 3);
-            
-            // Tạo bounding box cho bánh kem
-            const box = new THREE.Box3().setFromObject(cakeModel);
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-            
-            // Tạo các hạt ngẫu nhiên trong không gian của bánh kem
-            for (let i = 0; i < count; i++) {
-                const idx = i * 3;
-                
-                // Vị trí ngẫu nhiên trong không gian bánh kem
-                const x = (Math.random() - 0.5) * size.x * 1.5;
-                const y = (Math.random() - 0.5) * size.y * 1.5;
-                const z = (Math.random() - 0.5) * size.z * 1.5;
-                
-                // Màu sắc dựa trên vị trí (tạo hiệu ứng gradient)
-                const heightRatio = (y + size.y/2) / size.y;
-                
-                // Màu kem hồng cho phần trên, màu bánh vàng nâu cho phần dưới
-                if (heightRatio > 0.7) {
-                    // Phần kem trên cùng
-                    col[idx] = 1.0;     // R
-                    col[idx+1] = 0.82;  // G (0xD1/255 ≈ 0.82)
-                    col[idx+2] = 0.86;  // B (0xDC/255 ≈ 0.86)
-                } else if (heightRatio > 0.3) {
-                    // Phần bánh
-                    col[idx] = 0.96;    // R (0xF5/255 ≈ 0.96)
-                    col[idx+1] = 0.87;  // G (0xDE/255 ≈ 0.87)
-                    col[idx+2] = 0.70;  // B (0xB3/255 ≈ 0.70)
-                } else {
-                    // Phần đế bánh
-                    col[idx] = 0.55;    // R (0x8B/255 ≈ 0.55)
-                    col[idx+1] = 0.27;  // G (0x45/255 ≈ 0.27)
-                    col[idx+2] = 0.07;  // B (0x13/255 ≈ 0.07)
-                }
-                
-                // Thêm nhiễu ngẫu nhiên nhỏ cho màu sắc
-                col[idx] += (Math.random() - 0.5) * 0.1;
-                col[idx+1] += (Math.random() - 0.5) * 0.1;
-                col[idx+2] += (Math.random() - 0.5) * 0.1;
-                
-                // Đảm bảo giá trị màu trong khoảng 0-1
-                col[idx] = Math.max(0, Math.min(1, col[idx]));
-                col[idx+1] = Math.max(0, Math.min(1, col[idx+1]));
-                col[idx+2] = Math.max(0, Math.min(1, col[idx+2]));
-                
-                pos[idx] = x;
-                pos[idx+1] = y;
-                pos[idx+2] = z;
-                tar[idx] = x;
-                tar[idx+1] = y;
-                tar[idx+2] = z;
-            }
-            
-            particleAttributes.positions = pos;
-            particleAttributes.targets = tar;
-            particleAttributes.photoPositions = new Float32Array(tar);
-            particleAttributes.colors = col;
-            
-            if (particles) {
-                scene.remove(particles);
-            }
-            
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.BufferAttribute(particleAttributes.positions, 3));
-            geo.setAttribute('color', new THREE.BufferAttribute(particleAttributes.colors, 3));
-            
-            particles = new THREE.Points(geo, new THREE.PointsMaterial({
-                size: CONFIG.particleSize,
-                map: createSolidCircleTexture(),
-                vertexColors: true,
-                transparent: true,
-                opacity: 1.0,
-                depthWrite: true,
-                sizeAttenuation: true
-            }));
-            
-            scene.add(particles);
-            controls.reset();
-            camera.position.set(0, 0, 800); // Điều chỉnh vị trí camera cho bánh kem
-            
-            isInitialized = true;
-            generateAllNumbers(count);
-            particleAttributes.birthdayTargets = createBirthdayPoints(count);
-            
-            return count;
-        }
-
         function loadDefaultImage() {
-            // Thay vì load ảnh, tạo bánh kem 3D
-            createBirthdayCake();
-            cameraUtils.start();
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = 'img.png'; 
+            img.onload = () => { createParticlesFromImage(img); cameraUtils.start(); };
+            img.onerror = () => { alert("LỖI: Không tìm thấy 'img.png'!"); };
         }
 
         function triggerVideo() {
@@ -630,42 +337,46 @@
         }
 
         function initThree() {
-            scene = new THREE.Scene(); 
-            scene.background = new THREE.Color(0x020205); 
-            scene.fog = new THREE.FogExp2(0x020205, 0.0003);
-            
-            // Thêm ánh sáng
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(1, 1, 1);
-            scene.add(directionalLight);
-            
-            const pointLight = new THREE.PointLight(0xFFD700, 0.5, 1000);
-            pointLight.position.set(0, 200, 0);
-            scene.add(pointLight);
-            
-            camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 10000); 
-            camera.position.set(0, 0, 800);
-            renderer = new THREE.WebGLRenderer({antialias:true}); 
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            scene = new THREE.Scene(); scene.background = new THREE.Color(0x020205); scene.fog=new THREE.FogExp2(0x020205, 0.0003);
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 10000); camera.position.set(0,0,1000);
+            renderer = new THREE.WebGLRenderer({antialias:true}); renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
-            
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.rotateSpeed = 0.5;
-            
-            window.addEventListener('resize', ()=>{
-                camera.aspect = window.innerWidth/window.innerHeight; 
-                camera.updateProjectionMatrix(); 
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
+            window.addEventListener('resize', ()=>{camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight);});
             
             starSystem = createStars();
+
             loadDefaultImage();
             animate();
+        }
+
+        function createParticlesFromImage(image) {
+            const maxDim=CONFIG.sampleResolution; let w,h; if(image.width>image.height){w=maxDim;h=Math.round(maxDim*(image.height/image.width));}else{h=maxDim;w=Math.round(maxDim*(image.width/image.height));}
+            const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h; const ctx=canvas.getContext('2d'); ctx.drawImage(image,0,0,w,h);
+            const imgData=ctx.getImageData(0,0,w,h).data; const count=w*h; const pos=new Float32Array(count*3); const col=new Float32Array(count*3); const tar=new Float32Array(count*3);
+            let vIdx=0; const cTex=createSolidCircleTexture();
+            
+            for(let i=0;i<count;i++){
+                if(imgData[i*4+3]<20)continue;
+                const c=i%w; const r_idx=Math.floor(i/w);
+                const x=(c-w/2)*CONFIG.imageGap; const y=-(r_idx-h/2)*CONFIG.imageGap; 
+                const z=(1.0-(imgData[i*4]/255))*CONFIG.depthMultiplier;
+                pos[vIdx*3]=x; pos[vIdx*3+1]=y; pos[vIdx*3+2]=z; tar[vIdx*3]=x; tar[vIdx*3+1]=y; tar[vIdx*3+2]=z;
+                col[vIdx*3]=imgData[i*4]/255; col[vIdx*3+1]=imgData[i*4+1]/255; col[vIdx*3+2]=imgData[i*4+2]/255; vIdx++;
+            }
+            particleAttributes.positions=pos.slice(0,vIdx*3); particleAttributes.targets=tar.slice(0,vIdx*3); particleAttributes.photoPositions=new Float32Array(particleAttributes.targets); particleAttributes.colors=col.slice(0,vIdx*3);
+            if(particles){scene.remove(particles);}
+            const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(particleAttributes.positions,3)); geo.setAttribute('color',new THREE.BufferAttribute(particleAttributes.colors,3));
+            
+            particles = new THREE.Points(geo, new THREE.PointsMaterial({
+                size: CONFIG.particleSize, map: cTex, vertexColors: true, transparent: true, opacity: 1.0, depthWrite: true, sizeAttenuation: true
+            }));
+            
+            scene.add(particles); controls.reset(); camera.position.set(0,0,Math.max(w,h)*CONFIG.imageGap);
+            isInitialized=true;
+            generateAllNumbers(vIdx);
+            particleAttributes.birthdayTargets = createBirthdayPoints(vIdx); // ĐÃ ĐỔI TÊN
         }
 
         function generateAllNumbers(total) {
@@ -675,16 +386,14 @@
                 numberCache[i]=scanCanvasToPoints(c,total,s,2.2,s,true);
             }
         }
-        
-        function createBirthdayPoints(total){
+        function createBirthdayPoints(total){ // HÀM MỚI
             const w=900; const h=400; const c=document.createElement('canvas'); c.width=w; c.height=h;
             const ctx=c.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,w,h); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
             ctx.font='bold 55px Arial'; ctx.fillText("HAPPY BIRTHDAY",w/2,h/2-60); 
-            ctx.font='bold 60px Arial'; ctx.fillText("TRƯƠNG MINH ĐẠT",w/2,h/2+20);
-            ctx.font='bold 70px Arial'; ctx.fillText("21/01",w/2,h/2+100);
+            ctx.font='bold 60px Arial'; ctx.fillText("NGUYỄN MẠC NGỌC TRANG",w/2,h/2+20);
+            ctx.font='bold 70px Arial'; ctx.fillText("18/01",w/2,h/2+100);
             return scanCanvasToPoints(c,total,w,1.5,h,true);
         }
-        
         function scanCanvasToPoints(canvas,total,w,scale,h,thick){
             const ctx=canvas.getContext('2d'); const d=ctx.getImageData(0,0,w,h).data; const p=[];
             for(let i=0;i<w*h;i++){if(d[i*4]>128)p.push({x:(i%w)-w/2,y:-(Math.floor(i/w)-h/2)});}
@@ -747,7 +456,7 @@
                         } 
                     } 
                     else if (p.fingers === 0) { 
-                        if (currentMode !== 'BIRTHDAY') { 
+                        if (currentMode !== 'BIRTHDAY') {  // ĐÃ ĐỔI TÊN
                             currentMode = 'BIRTHDAY'; 
                             particleAttributes.targets = particleAttributes.birthdayTargets; 
                         } 
@@ -775,11 +484,6 @@
             requestAnimationFrame(animate);
 
             if(starSystem) starSystem.rotation.y += 0.0002;
-            
-            // Làm cho bánh kem xoay nhẹ
-            if (birthdayCake) {
-                birthdayCake.rotation.y += 0.002;
-            }
             
             if (isInitialized && Math.random() < 0.03) { 
                 if (Math.random() < 0.5) fireworks.push(new LinearFirework());
